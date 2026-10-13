@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Berkeley KPI Agent - v2.0 Production Freeze</title>
+  <!-- Google Fonts: Roboto -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <style>
+    body { font-family: 'Roboto', sans-serif; }
+    @media print {
+      .no-print { display: none !important; }
+      body { background-color: white !important; font-size: 11px; }
+      .print-full { width: 100% !important; margin: 0 !important; }
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased min-h-screen flex">
+
+  <!-- ========================================== -->
+  <!-- LEFT SIDEBAR                               -->
+  <!-- ========================================== -->
+  <aside class="w-64 bg-slate-950 text-white min-h-screen flex flex-col justify-between border-r border-slate-800 shrink-0 no-print">
+    
+    <div class="p-5 space-y-6">
+      
+      <!-- Berkeley Brand Logo Area -->
+      <div class="border-b border-slate-800/80 pb-4">
+        <div class="flex items-center justify-between">
+          <div class="bg-white p-2 rounded-xl shadow-sm inline-block">
+            <img id="sidebar-berkeley-logo" src="assets/berkeley-logo.png" alt="Berkeley DEFINED BY TRUST" class="h-7 object-contain">
+          </div>
+          <button onclick="openBerkeleyLogoModal()" title="Change Berkeley Logo" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors text-xs">
+            <i class="fa-solid fa-pen-to-square"></i>
+          </button>
+        </div>
+        <div class="mt-2.5 flex items-center justify-between">
+          <div class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+            Berkeley KPI Agent
+          </div>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-mono font-bold bg-[#006738] text-white">v2.0 Freeze</span>
+        </div>
+      </div>
+
+      <!-- Left Navigation Menu (Dashboard as #1) -->
+      <nav class="space-y-1.5">
+        <span class="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-2">Navigation</span>
+        
+        <button class="sidebar-nav-btn w-full" data-nav="dashboard">
+          <i class="fa-solid fa-chart-line text-sm"></i>
+          <span>Performance Dashboard</span>
+        </button>
+
+        <button class="sidebar-nav-btn w-full" data-nav="evaluation">
+          <i class="fa-solid fa-clipboard-check text-sm"></i>
+          <span>Monthly Evaluation</span>
+        </button>
+
+        <button class="sidebar-nav-btn w-full" data-nav="register">
+          <i class="fa-solid fa-book-bookmark text-sm"></i>
+          <span>KPI Register</span>
+        </button>
+
+        <button class="sidebar-nav-btn w-full" data-nav="sites">
+          <i class="fa-solid fa-building text-sm"></i>
+          <span>Sites & Questionnaires</span>
+        </button>
+
+        <button class="sidebar-nav-btn w-full" data-nav="users">
+          <i class="fa-solid fa-users text-sm"></i>
+          <span>User Access (RBAC)</span>
+        </button>
+      </nav>
+
+    </div>
+
+    <!-- Bottom Sidebar Info -->
+    <div class="p-5 border-t border-slate-800/80 space-y-2.5">
+      <div class="text-[10px] text-slate-400 font-semibold flex items-center justify-between">
+        <span>Berkeley Services UAE</span>
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+      </div>
+      <div class="text-[9px] text-slate-500 flex items-center justify-between">
+        <span>Defined by Trust</span>
+        <span class="font-mono">v2.0 (Locked)</span>
+      </div>
+      <div class="pt-2 border-t border-slate-800/60">
+        <button onclick="resetAllDataToDefaults()" class="text-[10px] font-semibold text-slate-400 hover:text-amber-400 flex items-center space-x-1.5 transition-colors">
+          <i class="fa-solid fa-arrows-rotate text-[10px]"></i>
+          <span>Reset Portal to Clean State</span>
+        </button>
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ========================================== -->
+  <!-- MAIN CONTENT CONTAINER                     -->
+  <!-- ========================================== -->
+  <div class="flex-1 flex flex-col min-h-screen overflow-x-hidden">
+    
+    <!-- Top Filter & Action Bar -->
+    <header class="bg-white border-b border-slate-200 px-6 py-3 sticky top-0 z-30 flex flex-wrap items-center justify-between gap-4 shadow-sm no-print">
+      
+      <!-- Site, Month & Year Selectors -->
+      <div class="flex flex-wrap items-center space-x-3">
+        <div>
+          <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Assigned Site:</label>
+          <select id="header-site-select" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#2E3092]">
+            <!-- Filtered according to user permissions -->
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Evaluation Month:</label>
+          <input type="month" id="header-month-select" class="bg-slate-50 border border-slate-300 rounded-xl px-3 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#2E3092]">
+        </div>
+
+        <div>
+          <label class="block text-[9px] font-bold uppercase tracking-wider text-slate-400">Timeline Year:</label>
+          <select id="header-year-select" class="bg-slate-50 border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:ring-2 focus:ring-[#2E3092]">
+            <option value="2026">2026 (Current)</option>
+            <option value="2025">2025</option>
+            <option value="2024">2024</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Quick Action Buttons & Top-Right User Switcher -->
+      <div class="flex items-center space-x-3">
+        
+        <!-- Notifications Bell -->
+        <button id="btn-notifications" onclick="openNotificationsModal()" class="relative p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200 text-xs font-bold transition-all shadow-sm" title="View Notifications">
+          <i class="fa-solid fa-bell text-sm text-[#2E3092]"></i>
+          <span id="notif-badge" class="absolute -top-1 -right-1 bg-[#BE1E2D] text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center hidden">0</span>
+        </button>
+
+        <button id="btn-header-excel" class="px-3 py-2 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-[#006738] border border-emerald-300 text-xs font-bold transition-all flex items-center shadow-sm">
+          <i class="fa-solid fa-file-excel mr-1.5 text-emerald-600"></i> Export Excel
+        </button>
+
+        <button id="btn-header-print" class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center shadow-sm">
+          <i class="fa-solid fa-print mr-1"></i> Print
+        </button>
+
+        <!-- Top-Right User Switcher Persona -->
+        <div class="pl-2 border-l border-slate-200">
+          <div id="header-user-switcher-container" class="flex items-center space-x-2 bg-slate-50 p-1.5 rounded-xl border border-slate-200 shadow-sm">
+            <!-- Populated from app.js -->
+          </div>
+        </div>
+
+      </div>
+
+    </header>
+
+    <!-- Main Dynamic Views Body -->
+    <main class="p-6 space-y-6 flex-1">
+      
+      <!-- VIEW 1: PERFORMANCE DASHBOARD (NOW #1) -->
+      <div id="view-dashboard" class="space-y-6">
+        <div id="dashboard-main-container">
+          <!-- Populated from app.js -->
+        </div>
+      </div>
+
+      <!-- VIEW 2: MONTHLY EVALUATION WORKFLOW -->
+      <div id="view-evaluation" class="hidden space-y-6">
+        <div id="evaluation-main-container">
+          <!-- Populated from app.js -->
+        </div>
+      </div>
+
+      <!-- VIEW 3: KPI REGISTER -->
+      <div id="view-register" class="hidden space-y-6">
+        <div id="register-main-container">
+          <!-- Populated from app.js -->
+        </div>
+      </div>
+
+      <!-- VIEW 4: SITES & CUSTOM QUESTIONNAIRE PROVISIONING -->
+      <div id="view-sites" class="hidden space-y-6">
+        <div id="sites-main-container">
+          <!-- Populated from app.js -->
+        </div>
+      </div>
+
+      <!-- VIEW 5: USER MANAGEMENT (RBAC) -->
+      <div id="view-users" class="hidden space-y-6">
+        <div id="users-main-container">
+          <!-- Populated from app.js -->
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT SITE (WITH LOGO UPLOAD)  -->
+  <!-- ========================================== -->
+  <div id="modal-new-site" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between">
+        <h3 id="modal-site-title" class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-building mr-2 text-[#FBAF3F]"></i> Add New Client Site
+        </h3>
+        <button onclick="closeNewSiteModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3.5 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <input type="hidden" id="input-edit-site-id" value="">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Contract / Site Name:</label>
+          <input type="text" id="input-site-name" placeholder="e.g. Yas Mall (YAM)" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-[#2E3092]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Client Organization:</label>
+          <input type="text" id="input-client-name" placeholder="e.g. Miral Asset Management" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-[#2E3092]">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Location:</label>
+          <input type="text" id="input-site-location" placeholder="e.g. Abu Dhabi, UAE" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold focus:ring-2 focus:ring-[#2E3092]">
+        </div>
+
+        <!-- Site Logo Upload -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+          <label class="block text-xs font-bold text-slate-700">Client / Site Logo:</label>
+          <div class="flex items-center space-x-3">
+            <div id="site-logo-preview-box" class="w-14 h-14 rounded-lg bg-white border border-slate-300 flex items-center justify-center p-1 overflow-hidden shrink-0">
+              <i class="fa-solid fa-image text-slate-300 text-xl"></i>
+            </div>
+            <div class="space-y-1.5 flex-1">
+              <input type="file" id="input-site-logo-file" accept="image/*" class="text-[11px] file:mr-2 file:py-1 file:px-2.5 file:rounded-md file:border-0 file:text-[11px] file:font-semibold file:bg-[#2E3092] file:text-white hover:file:bg-blue-900 cursor-pointer">
+              <input type="text" id="input-site-logo-url" placeholder="Or paste Image URL" class="w-full bg-white border border-slate-300 rounded-md p-1.5 text-[11px] font-mono">
+            </div>
+          </div>
+          <input type="hidden" id="input-site-logo-base64" value="">
+        </div>
+
+        <!-- Base Template Options -->
+        <div id="site-template-source-box">
+          <label class="block text-xs font-bold text-slate-700 mb-1">KPI Questionnaire Template:</label>
+          <select id="input-site-template-source" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold text-slate-800">
+            <option value="clone-yam">Clone standard Miral Yas Mall matrix (SS.01-SS.06, 100 pts)</option>
+            <option value="blank">Blank sheet (Build custom sections & questions)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeNewSiteModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+        <button onclick="saveNewSiteFromModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2E3092] hover:bg-blue-900 text-white shadow-sm">Save Site</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CLONE KPI QUESTIONNAIRE             -->
+  <!-- ========================================== -->
+  <div id="modal-clone-site-kpi" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between">
+        <h3 class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-copy mr-2 text-[#FBAF3F]"></i> Clone KPI Questionnaire
+        </h3>
+        <button onclick="closeCloneSiteModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3">
+        <p class="text-xs text-slate-600 leading-relaxed">
+          Clone all sections, questions, weightages, and scoring options from another site into <b id="clone-target-site-name" class="text-slate-900"></b>.
+        </p>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Source Site to Clone From:</label>
+          <select id="select-clone-source-site" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800">
+            <!-- Populated from app.js -->
+          </select>
+        </div>
+
+        <input type="hidden" id="input-clone-target-site-id" value="">
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeCloneSiteModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+        <button onclick="executeCloneQuestionnaire()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2E3092] hover:bg-blue-900 text-white shadow-sm">Clone Matrix</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT KPI SECTION              -->
+  <!-- ========================================== -->
+  <div id="modal-edit-section" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between">
+        <h3 id="modal-section-title" class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-folder-plus mr-2 text-[#FBAF3F]"></i> Add KPI Section
+        </h3>
+        <button onclick="closeEditSectionModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3">
+        <input type="hidden" id="input-section-site-id" value="">
+        <input type="hidden" id="input-section-id" value="">
+
+        <div class="grid grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Section Code:</label>
+            <input type="text" id="input-section-code" placeholder="e.g. SS.07" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Section Max Score:</label>
+            <input type="number" id="input-section-max-score" placeholder="e.g. 15" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Section Name:</label>
+          <input type="text" id="input-section-name" placeholder="e.g. Energy Management & Sustainability" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Icon (Font Awesome):</label>
+          <select id="input-section-icon" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+            <option value="fa-briefcase">Briefcase (Delivery & Management)</option>
+            <option value="fa-chart-pie">Chart (Reporting & CAFM)</option>
+            <option value="fa-leaf">Leaf (Soft Services / Cleaning)</option>
+            <option value="fa-gears">Gears (Hard Services / Maintenance)</option>
+            <option value="fa-shield-halved">Shield (HSE & Security)</option>
+            <option value="fa-award">Award (Quality & Morale)</option>
+            <option value="fa-bolt">Bolt (Energy & Electrical)</option>
+            <option value="fa-building">Building (Operations)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeEditSectionModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+        <button onclick="saveSectionFromModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2E3092] hover:bg-blue-900 text-white shadow-sm">Save Section</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT KPI QUESTION             -->
+  <!-- ========================================== -->
+  <div id="modal-edit-kpi" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 overflow-hidden">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between">
+        <h3 id="modal-kpi-title" class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-list-check mr-2 text-[#FBAF3F]"></i> Add KPI Question
+        </h3>
+        <button onclick="closeEditKpiModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <input type="hidden" id="input-kpi-site-id" value="">
+        <input type="hidden" id="input-kpi-section-id" value="">
+        <input type="hidden" id="input-kpi-id" value="">
+
+        <div class="grid grid-cols-3 gap-3">
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">KPI Code/ID:</label>
+            <input type="text" id="input-kpi-code" placeholder="e.g. KPI-32" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono font-semibold">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Classification:</label>
+            <select id="input-kpi-classification" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+              <option value="Critical">Critical</option>
+              <option value="Standard" selected>Standard</option>
+              <option value="Minor">Minor</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-slate-700 mb-1">Max Score:</label>
+            <input type="number" id="input-kpi-max-score" min="1" max="100" value="3" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Question Title:</label>
+          <input type="text" id="input-kpi-title-text" placeholder="e.g. Preventive Maintenance Completion Rate" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Detailed Description:</label>
+          <textarea id="input-kpi-description" rows="2" placeholder="Full specification of standard to achieve" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold"></textarea>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Measurement Metric / Standard:</label>
+          <input type="text" id="input-kpi-measurement" placeholder="e.g. Verified by CAFM audit; 95% threshold required" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+          <label class="block text-[11px] font-bold text-slate-700 mb-1">Auto Scoring Options (One per line: "Score | Label"):</label>
+          <textarea id="input-kpi-options-raw" rows="3" placeholder="3 | 0 Breaches - Excellent (Score: 3)&#10;2 | 1 Breach - Minor (Score: 2)&#10;0 | 2+ Breaches - Failed (Score: 0)" class="w-full bg-white border border-slate-300 rounded-lg p-2 text-[11px] font-mono"></textarea>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeEditKpiModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+        <button onclick="saveKpiQuestionFromModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2E3092] hover:bg-blue-900 text-white shadow-sm">Save KPI Question</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: ADD / EDIT USER (RBAC + ACTIVE)     -->
+  <!-- ========================================== -->
+  <div id="modal-edit-user" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between">
+        <h3 id="modal-user-form-title" class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-user-gear mr-2 text-[#FBAF3F]"></i> Edit User Access
+        </h3>
+        <button onclick="closeEditUserModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-3 max-h-[80vh] overflow-y-auto custom-scrollbar">
+        <input type="hidden" id="input-edit-user-id" value="">
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Full Name:</label>
+          <input type="text" id="input-edit-user-name" placeholder="e.g. John Doe" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Email Address:</label>
+          <input type="email" id="input-edit-user-email" placeholder="e.g. j.doe@client.com" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-semibold">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Role Permission:</label>
+          <select id="input-edit-user-role" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-bold text-slate-800">
+            <option value="Client">Client (Evaluates & Approves Assigned Site)</option>
+            <option value="Facility Engineer">Facility Engineer (Berkeley Review & Justification)</option>
+            <option value="Admin">Admin (Site & User Manager)</option>
+            <option value="Super Admin">Super Admin (Global Access & Configuration)</option>
+          </select>
+        </div>
+
+        <!-- Active / Inactive Status Switch -->
+        <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 flex items-center justify-between">
+          <div>
+            <div class="text-xs font-bold text-slate-800">Account Status</div>
+            <div class="text-[10px] text-slate-500">Inactive users cannot log in or perform actions</div>
+          </div>
+          <label class="relative inline-flex items-center cursor-pointer">
+            <input type="checkbox" id="input-edit-user-status" class="sr-only peer" checked>
+            <div class="w-11 h-6 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:width-5 after:transition-all peer-checked:bg-[#006738]"></div>
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Assign Permitted Sites:</label>
+          <div id="modal-edit-user-sites-checkboxes" class="space-y-1.5 max-h-32 overflow-y-auto bg-slate-50 p-2.5 rounded-lg border border-slate-200">
+            <!-- Dynamically populated -->
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end space-x-2">
+        <button onclick="closeEditUserModal()" class="px-3.5 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+        <button onclick="saveUserFromModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2E3092] hover:bg-blue-900 text-white shadow-sm">Save User</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: AUDIT LOG TIMELINE MODAL            -->
+  <!-- ========================================== -->
+  <div id="modal-audit-log" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between shrink-0">
+        <h3 class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-clock-rotate-left mr-2 text-[#FBAF3F]"></i> KPI Lifecycle & Audit Trail Log
+        </h3>
+        <button onclick="closeAuditLogModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto custom-scrollbar space-y-4 flex-1">
+        <div id="audit-log-meta-header" class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+          <!-- Populated from app.js -->
+        </div>
+
+        <div class="space-y-4">
+          <h4 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Chronological Audit Revisions</h4>
+          <div id="audit-log-timeline-container" class="relative pl-6 space-y-6 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-slate-200">
+            <!-- Timeline nodes populated from app.js -->
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-end shrink-0">
+        <button onclick="closeAuditLogModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: NOTIFICATIONS CENTER                -->
+  <!-- ========================================== -->
+  <div id="modal-notifications" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-lg w-full border border-slate-200 overflow-hidden flex flex-col max-h-[80vh]">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-2">
+          <i class="fa-solid fa-bell text-[#FBAF3F]"></i>
+          <h3 class="text-xs font-bold uppercase tracking-wider">Notification Center</h3>
+        </div>
+        <div class="flex items-center space-x-2">
+          <button onclick="markAllNotificationsRead()" class="text-[10px] text-amber-300 hover:underline font-bold">Mark all read</button>
+          <button onclick="closeNotificationsModal()" class="text-slate-300 hover:text-white ml-2">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>
+
+      <div id="notifications-list-container" class="p-4 overflow-y-auto custom-scrollbar space-y-2 flex-1">
+        <!-- Populated from app.js -->
+      </div>
+
+      <div class="bg-slate-50 p-3 border-t border-slate-200 flex justify-end shrink-0">
+        <button onclick="closeNotificationsModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: CORPORATE EMAIL / MEMO PREVIEW      -->
+  <!-- ========================================== -->
+  <div id="modal-notification-preview" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full border border-slate-200 overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between shrink-0">
+        <h3 class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-envelope-open-text mr-2 text-[#FBAF3F]"></i> Corporate Email Notification Template
+        </h3>
+        <button onclick="closeNotificationPreviewModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-6 overflow-y-auto custom-scrollbar flex-1 bg-slate-100">
+        <div id="notification-memo-preview-box" class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+          <!-- Formatted Memo/Email Populated from app.js -->
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex items-center justify-between shrink-0">
+        <div class="flex items-center space-x-2">
+          <button onclick="copyNotificationHtml()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800">
+            <i class="fa-solid fa-code mr-1"></i> Copy HTML
+          </button>
+          <button onclick="copyNotificationText()" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-slate-200 hover:bg-slate-300 text-slate-800">
+            <i class="fa-solid fa-copy mr-1"></i> Copy Text
+          </button>
+        </div>
+        <button onclick="closeNotificationPreviewModal()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-slate-800 text-white">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MODAL: UPLOAD BERKELEY LOGO                -->
+  <!-- ========================================== -->
+  <div id="modal-berkeley-logo" class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 hidden no-print">
+    <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden">
+      <div class="bg-[#2E3092] text-white p-4 flex items-center justify-between">
+        <h3 class="text-xs font-bold uppercase tracking-wider flex items-center">
+          <i class="fa-solid fa-image mr-2 text-[#FBAF3F]"></i> Berkeley Brand Logo Settings
+        </h3>
+        <button onclick="closeBerkeleyLogoModal()" class="text-slate-300 hover:text-white">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-5 space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-2">Current Logo Preview:</label>
+          <div class="bg-slate-100 p-4 rounded-xl border border-slate-200 text-center">
+            <img id="modal-berkeley-logo-preview" src="assets/berkeley-logo.png" alt="Berkeley Logo" class="h-10 object-contain mx-auto">
+          </div>
+        </div>
+
+        <div class="space-y-2">
+          <label class="block text-xs font-bold text-slate-700">Upload New Berkeley Logo:</label>
+          <input type="file" id="input-berkeley-logo-file" accept="image/*" class="text-xs file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-[#2E3092] file:text-white hover:file:bg-blue-900 cursor-pointer">
+          <input type="text" id="input-berkeley-logo-url" placeholder="Or enter Logo URL" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-xs font-mono">
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 border-t border-slate-200 flex justify-between">
+        <button onclick="resetBerkeleyLogoDefault()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-red-600 hover:bg-red-50">Reset Default</button>
+        <div class="flex space-x-2">
+          <button onclick="closeBerkeleyLogoModal()" class="px-3 py-1.5 rounded-lg text-xs font-bold text-slate-600 hover:bg-slate-200">Cancel</button>
+          <button onclick="saveBerkeleyLogo()" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-[#2E3092] text-white">Save Logo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts with cache-busting v2.0 freeze parameter -->
+  <script src="kpi-config.js?v=2.0.0"></script>
+  <script src="excel-export.js?v=2.0.0"></script>
+  <script src="app.js?v=2.0.0"></script>
+</body>
+</html>
